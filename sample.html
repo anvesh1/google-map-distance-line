@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Simple Map</title>
+  <meta name="viewport" content="initial-scale=1.0">
+  <meta charset="utf-8">
+  <style>
+    /* Always set the map height explicitly to define the size of the div
+     * element that contains the map. */
+    #map {
+      height: 100%;
+    }
+    /* Optional: Makes the sample page fill the window. */
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+  <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.js"></script>-->
+
+</head>
+<body>
+<button id="btnSave" onclick="generateImage()">Generate Image</button>
+<a href="" target="_blank" Id="mapImage">View Image</a>
+<div id="map"></div>
+
+<script src="./lib/MeasureTool.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js"></script>
+<script>
+  var map, measureTool;
+  var markers = [];
+  var line;
+
+  var markerCounter = 0;
+  function initMap() {
+    map = new google.maps.Map(document.getElementById('map'), {
+      center: {lat: 47.94796, lng: -116.707975},
+      zoom: 16,
+      scaleControl: true,
+      mapTypeId: google.maps.MapTypeId.ROADMAP
+    });
+
+    line = new google.maps.Polyline({
+      map: map,
+      strokeColor: "black",
+      strokeOpacity: 0.5,
+      strokeWeight: 2
+    });
+
+
+    var image = {
+      url: '',
+      size: new google.maps.Size(20, 32),
+      origin: new google.maps.Point(0, 0),
+      anchor: new google.maps.Point(0, 32)
+    };
+
+
+    google.maps.event.addListener(map, 'click', function(event) {
+
+      var marker = new google.maps.Marker({
+        map: map,
+        /*
+         icon: {
+         path: google.maps.SymbolPath.CIRCLE,
+         fillColor: '#00F',
+         fillOpacity: 0.6,
+         strokeColor: '#00A',
+         strokeOpacity: 0.9,
+         strokeWeight: 1,
+         scale: 30
+         },
+         */
+        icon : image,
+        position: event.latLng,
+        draggable:true,
+        label: { color: 'black', fontWeight: 'bold', fontSize: '12px', text: markerCounter.toString() }
+      });
+      markerCounter++;
+      markers.push(marker);
+      drawPath(marker);
+
+      /*
+      google.maps.event.addListener(marker, 'dblclick', function(event) {
+        marker.setMap(null);
+        drawPath();
+      });
+
+      google.maps.event.addListener(marker, 'drag', function(event) {
+        drawPath();
+      });
+      */
+    });
+  }
+
+  function countMarkers() {
+    count = 0;
+    for (var i = markers.length - 1; i >= 0; i--) {
+      if (markers[i].getMap() == null) {
+        markers.splice(i, 1);
+      } else {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  function drawPath(marker) {
+    countMarkers();
+    var coords = [];
+    for (var i = 0; i < markers.length; i++) {
+      coords.push(markers[i].getPosition());
+    }
+    line.setPath(coords);
+
+    line.addListener('mouseover', function(event) {
+
+      console.log(Math.round(meters/1000 * 100) / 100);
+    })
+
+    meters = google.maps.geometry.spherical.computeLength(coords);
+    distanceKm = Math.round(meters/1000 * 100) / 100;
+    distanceMile = Math.round(meters/1609 * 100) / 100;
+
+    if(markerCounter > 1){
+      marker.label.text = marker.label.text+ ' : '+ distanceKm+ ' km';
+      console.log(marker.label.text);
+    }
+
+  }
+/*
+  function clearMarkers() {
+    for (var i = 0; i < markers.length; i++) {
+      markers[i].setMap(null)
+    }
+    drawPath();
+  }
+*/
+
+  var generateImage = function(){
+    html2canvas($("#map"), {
+      useCORS: true,
+      onrendered: function(canvas) {
+        var imageData= canvas.toDataURL("image/png");
+        $('#mapImage').attr("href",imageData);
+        //console.log(imageData);
+      }
+    });
+  }
+
+</script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBTdH3AFSWLD3SrgbNqTGoRsg3U6W0qAAg&libraries=geometry&callback=initMap"
+        async defer></script>
+
+</body>
+</html>
